@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moonfall Archivist - HTML5 Preview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a1e, #1a1a3e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #cce7ff;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 1024px;
+            height: 768px;
+            border: 2px solid #4a7ba7;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(74, 123, 167, 0.5);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #0a0a1e;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .ui-element {
+            position: absolute;
+            background: rgba(10, 10, 30, 0.8);
+            border: 1px solid #4a7ba7;
+            border-radius: 5px;
+            padding: 10px;
+            color: #cce7ff;
+            font-size: 18px;
+            pointer-events: auto;
+        }
+        
+        #score {
+            top: 20px;
+            left: 20px;
+        }
+        
+        #archives {
+            top: 20px;
+            left: 220px;
+        }
+        
+        #timer {
+            top: 20px;
+            right: 20px;
+        }
+        
+        #interactionPrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(74, 123, 167, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 20px;
+            display: none;
+        }
+        
+        #startScreen, #victoryScreen, #defeatScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 30, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .title {
+            font-size: 48px;
+            color: #66d9ff;
+            text-shadow: 0 0 20px rgba(102, 217, 255, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        .instructions {
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4a7ba7, #66d9ff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 150px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #66d9ff, #4a7ba7);
+            transform: scale(1.05);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #puzzleUI {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 30, 0.95);
+            border: 2px solid #66d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+        }
+        
+        .star {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .star:hover {
+            transform: scale(1.5);
+            background: #66d9ff;
+        }
+        
+        .star.connected {
+            background: #66d9ff;
+            box-shadow: 0 0 10px #66d9ff;
+        }
+        
+        .orb {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .orb:hover {
+            transform: scale(1.3);
+        }
+        
+        .orb:active {
+            transform: scale(1.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1024" height="768"></canvas>
+        
+        <div id="ui">
+            <div id="score" class="ui-element">Score: 0</div>
+            <div id="archives" class="ui-element">Archives: 0/3</div>
+            <div id="timer" class="ui-element">Time: 5:00</div>
+            <div id="interactionPrompt">Press E to Interact</div>
+        </div>
+        
+        <div id="startScreen">
+            <h1 class="title">Moonfall Archivist</h1>
+            <div class="instructions">
+                <p>Restore the lost moon archives by solving ancient puzzles.</p>
+                <p><strong>Controls:</strong></p>
+                <p>W/A/S/D - Move | Space - Jump | E - Interact</p>
+                <p>Align constellations, decode orb patterns, and repair ancient machines before time runs out!</p>
+            </div>
+            <button onclick="startGame()">Start Journey</button>
+            <button onclick="closeGame()">Close</button>
+        </div>
+        
+        <div id="victoryScreen" class="hidden">
+            <h1 class="title">Archives Restored!</h1>
+            <div id="finalScore">Final Score: 0</div>
+            <div id="timeBonus">Time Bonus: 0</div>
+            <div id="totalScore">Total Score: 0</div>
+            <button onclick="restartGame()">Play Again</button>
+            <button onclick="showMainMenu()">Main Menu</button>
+            <button onclick="closeGame()">Close</button>
+        </div>
+        
+        <div id="defeatScreen" class="hidden">
+            <h1 class="title">Time Expired</h1>
+            <div id="defeatScore">Final Score: 0</div>
+            <div id="defeatArchives">Archives Restored: 0/3</div>
+            <button onclick="restartGame()">Try Again</button>
+            <button onclick="showMainMenu()">Main Menu</button>
+            <button onclick="closeGame()">Close</button>
+        </div>
+        
+        <div id="puzzleUI">
+            <div id="puzzleTitle">Puzzle</div>
+            <div id="puzzleContent"></div>
+            <button onclick="closePuzzle()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameState = {
+            screen: 'start',
+            score: 0,
+            archives: 0,
+            timeRemaining: 300,
+            player: {
+                x: 100,
+                y: 400,
+                vx: 0,
+                vy: 0,
+                width: 40,
+                height: 40,
+                onGround: false,
+                gravity: 200
+            },
+            stars: [],
+            puzzles: {
+                constellation: { solved: false, x: 300, y: 200 },
+                orbDecoder: { solved: false, x: 600, y: 400 },
+                gravityShifter: { x: 450, y: 300 }
+            },
+            keys: {},
+            currentPuzzle: null,
+            gravityDirection: 'down'
+        };
+        
+        // Initialize stars
+        function createStars() {
+            gameState.stars = [];
+            for (let i = 0; i < 100; i++) {
+                gameState.stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 0.5,
+                    brightness: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+        
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key.toLowerCase()] = true;
+            
+            if (e.key.toLowerCase() === 'e' && gameState.screen === 'game') {
+                checkInteraction();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Game functions
+        function startGame() {
+            gameState.screen = 'game';
+            gameState.score = 0;
+            gameState.archives = 0;
+            gameState.timeRemaining = 300;
+            gameState.player.x = 100;
+            gameState.player.y = 400;
+            gameState.puzzles.constellation.solved = false;
+            gameState.puzzles.orbDecoder.solved = false;
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('defeatScreen').classList.add('hidden');
+            
+            gameLoop();
+        }
+        
+        function closeGame() {
+            if (confirm('Are you sure you want to close the game?')) {
+                window.close();
+            }
+        }
+        
+        function restartGame() {
+            startGame();
+        }
+        
+        function showMainMenu() {
+            gameState.screen = 'start';
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('defeatScreen').classList.add('hidden');
+        }
+        
+        function updatePlayer(deltaTime) {
+            const player = gameState.player;
+            const speed = 150;
+            const jumpPower = -300;
+            
+            // Apply gravity based on direction
+            switch(gameState.gravityDirection) {
+                case 'down':
+                    player.vy += player.gravity * deltaTime;
+                    break;
+                case 'up':
+                    player.vy -= player.gravity * deltaTime;
+                    break;
+                case 'left':
+                    player.vx -= player.gravity * deltaTime;
+                    break;
+                case 'right':
+                    player.vx += player.gravity * deltaTime;
+                    break;
+            }
+            
+            // Handle input
+            if (gameState.keys['a']) player.vx = -speed;
+            else if (gameState.keys['d']) player.vx = speed;
+            else player.vx *= 0.8;
+            
+            if (gameState.keys['w'] && player.onGround) {
+                player.vy = jumpPower;
+                player.onGround = false;
+            }
+            
+            // Update position
+            player.x += player.vx * deltaTime;
+            player.y += player.vy * deltaTime;
+            
+            // Boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            if (player.y < 0) player.y = 0;
+            if (player.y > canvas.height - player.height) {
+                player.y = canvas.height - player.height;
+                player.onGround = true;
+                player.vy = 0;
+            }
+            
+            // Ground collision
+            if (player.y >= canvas.height - player.height - 50) {
+                player.onGround = true;
+                player.vy = 0;
+            }
+        }
+        
+        function checkInteraction() {
+            const player = gameState.player;
+            const interactionRange = 60;
+            
+            // Check constellation puzzle
+            const constDist = Math.hypot(player.x - gameState.puzzles.constellation.x, player.y - gameState.puzzles.constellation.y);
+            if (constDist < interactionRange && !gameState.puzzles.constellation.solved) {
+                openConstellationPuzzle();
+                return;
+            }
+            
+            // Check orb decoder
+            const orbDist = Math.hypot(player.x - gameState.puzzles.orbDecoder.x, player.y - gameState.puzzles.orbDecoder.y);
+            if (orbDist < interactionRange && !gameState.puzzles.orbDecoder.solved) {
+                openOrbPuzzle();
+                return;
+            }
+            
+            // Check gravity shifter
+            const gravDist = Math.hypot(player.x - gameState.puzzles.gravityShifter.x, player.y - gameState.puzzles.gravityShifter.y);
+            if (gravDist < interactionRange) {
+                shiftGravity();
+                return;
+            }
+        }
+        
+        function openConstellationPuzzle() {
+            gameState.currentPuzzle = 'constellation';
+            const puzzleUI = document.getElementById('puzzleUI');
+            const content = document.getElementById('puzzleContent');
+            
+            document.getElementById('puzzleTitle').textContent = 'Align the Constellation';
+            content.innerHTML = `
+                <div style="position: relative; width: 300px; height: 200px;">
+                    <div class="star" style="left: 50px; top: 30px;" data-index="0"></div>
+                    <div class="star" style="left: 150px; top: 30px;" data-index="1"></div>
+                    <div class="star" style="left: 100px; top: 100px;" data-index="2"></div>
+                    <div class="star" style="left: 30px; top: 150px;" data-index="3"></div>
+                    <div class="star" style="left: 200px; top: 150px;" data-index="4"></div>
+                </div>
+                <p>Connect the stars in the correct pattern</p>
+            `;
+            
+            puzzleUI.style.display = 'block';
+            
+            // Add click handlers
+            const stars = content.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    star.classList.add('connected');
+                    checkConstellationSolution();
+                });
+            });
+        }
+        
+        function openOrbPuzzle() {
+            gameState.currentPuzzle = 'orb';
+            const puzzleUI = document.getElementById('puzzleUI');
+            const content = document.getElementById('puzzleContent');
+            
+            document.getElementById('puzzleTitle').textContent = 'Decode the Orb Sequence';
+            content.innerHTML = `
+                <div style="position: relative; width: 300px; height: 100px;">
+                    <div class="orb" style="left: 20px; background: #ff0000;" data-index="0"></div>
+                    <div class="orb" style="left: 80px; background: #0000ff;" data-index="1"></div>
+                    <div class="orb" style="left: 140px; background: #00ff00;" data-index="2"></div>
+                    <div class="orb" style="left: 200px; background: #ffff00;" data-index="3"></div>
+                    <div class="orb" style="left: 260px; background: #ff00ff;" data-index="4"></div>
+                </div>
+                <p>Click orbs in sequence: 2, 4, 3, 1, 5</p>
+                <div id="sequenceDisplay"></div>
+            `;
+            
+            puzzleUI.style.display = 'block';
+            
+            // Add click handlers
+            const orbs = content.querySelectorAll('.orb');
+            const sequence = [];
+            
+            orbs.forEach(orb => {
+                orb.addEventListener('click', () => {
+                    const index = parseInt(orb.dataset.index);
+                    sequence.push(index + 1);
+                    document.getElementById('sequenceDisplay').textContent = 'Sequence: ' + sequence.join(' ');
+                    
+                    if (sequence.length === 5) {
+                        if (sequence.join('') === '24315') {
+                            solveOrbPuzzle();
+                        } else {
+                            document.getElementById('sequenceDisplay').textContent += ' - Try again!';
+                            sequence.length = 0;
+                        }
+                    }
+                });
+            });
+        }
+        
+        function checkConstellationSolution() {
+            const connected = document.querySelectorAll('.star.connected');
+            if (connected.length === 5) {
+                solveConstellationPuzzle();
+            }
+        }
+        
+        function solveConstellationPuzzle() {
+            gameState.puzzles.constellation.solved = true;
+            gameState.score += 100;
+            gameState.archives++;
+            closePuzzle();
+            checkVictory();
+        }
+        
+        function solveOrbPuzzle() {
+            gameState.puzzles.orbDecoder.solved = true;
+            gameState.score += 150;
+            gameState.archives++;
+            closePuzzle();
+            checkVictory();
+        }
+        
+        function shiftGravity() {
+            const directions = ['down', 'up', 'left', 'right'];
+            const currentIndex = directions.indexOf(gameState.gravityDirection);
+            gameState.gravityDirection = directions[(currentIndex + 1) % 4];
+            
+            // Visual feedback
+            const prompt = document.getElementById('interactionPrompt');
+            prompt.textContent = `Gravity: ${gameState.gravityDirection}`;
+            prompt.style.display = 'block';
+            setTimeout(() => {
+                prompt.style.display = 'none';
+            }, 1000);
+        }
+        
+        function closePuzzle() {
+            document.getElementById('puzzleUI').style.display = 'none';
+            gameState.currentPuzzle = null;
+        }
+        
+        function checkVictory() {
+            if (gameState.archives >= 3) {
+                showVictoryScreen();
+            }
+        }
+        
+        function showVictoryScreen() {
+            gameState.screen = 'victory';
+            const timeBonus = Math.floor(gameState.timeRemaining * 2);
+            const totalScore = gameState.score + timeBonus;
+            
+            document.getElementById('finalScore').textContent = `Final Score: ${gameState.score}`;
+            document.getElementById('timeBonus').textContent = `Time Bonus: ${timeBonus}`;
+            document.getElementById('totalScore').textContent = `Total Score: ${totalScore}`;
+            document.getElementById('victoryScreen').classList.remove('hidden');
+        }
+        
+        function showDefeatScreen() {
+            gameState.screen = 'defeat';
+            document.getElementById('defeatScore').textContent = `Final Score: ${gameState.score}`;
+            document.getElementById('defeatArchives').textContent = `Archives Restored: ${gameState.archives}/3`;
+            document.getElementById('defeatScreen').classList.remove('hidden');
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = `Score: ${gameState.score}`;
+            document.getElementById('archives').textContent = `Archives: ${gameState.archives}/3`;
+            
+            const minutes = Math.floor(gameState.timeRemaining / 60);
+            const seconds = Math.floor(gameState.timeRemaining % 60);
+            document.getElementById('timer').textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#0a0a1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stars
+            gameState.stars.forEach(star => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw ground
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            
+            // Draw puzzles
+            // Constellation
+            if (!gameState.puzzles.constellation.solved) {
+                ctx.fillStyle = '#ffff00';
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.arc(gameState.puzzles.constellation.x, gameState.puzzles.constellation.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Constellation', gameState.puzzles.constellation.x, gameState.puzzles.constellation.y + 50);
+            }
+            
+            // Orb Decoder
+            if (!gameState.puzzles.orbDecoder.solved) {
+                ctx.fillStyle = '#ff00ff';
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.arc(gameState.puzzles.orbDecoder.x, gameState.puzzles.orbDecoder.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Orb Decoder', gameState.puzzles.orbDecoder.x, gameState.puzzles.orbDecoder.y + 50);
+            }
+            
+            // Gravity Shifter
+            ctx.fillStyle = '#8000ff';
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(gameState.puzzles.gravityShifter.x, gameState.puzzles.gravityShifter.y, 25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Gravity', gameState.puzzles.gravityShifter.x, gameState.puzzles.gravityShifter.y + 50);
+            
+            // Draw player
+            ctx.fillStyle = '#66d9ff';
+            ctx.fillRect(gameState.player.x, gameState.player.y, gameState.player.width, gameState.player.height);
+            
+            // Player glow effect
+            ctx.shadowColor = '#66d9ff';
+            ctx.shadowBlur = 20;
+            ctx.fillRect(gameState.player.x, gameState.player.y, gameState.player.width, gameState.player.height);
+            ctx.shadowBlur = 0;
+            
+            // Show interaction prompt
+            const player = gameState.player;
+            const interactionRange = 60;
+            
+            let nearObject = false;
+            const constDist = Math.hypot(player.x - gameState.puzzles.constellation.x, player.y - gameState.puzzles.constellation.y);
+            const orbDist = Math.hypot(player.x - gameState.puzzles.orbDecoder.x, player.y - gameState.puzzles.orbDecoder.y);
+            const gravDist = Math.hypot(player.x - gameState.puzzles.gravityShifter.x, player.y - gameState.puzzles.gravityShifter.y);
+            
+            if ((constDist < interactionRange && !gameState.puzzles.constellation.solved) ||
+                (orbDist < interactionRange && !gameState.puzzles.orbDecoder.solved) ||
+                gravDist < interactionRange) {
+                nearObject = true;
+            }
+            
+            const prompt = document.getElementById('interactionPrompt');
+            if (nearObject && gameState.screen === 'game') {
+                prompt.style.display = 'block';
+            } else {
+                prompt.style.display = 'none';
+            }
+        }
+        
+        let lastTime = 0;
+        function gameLoop(currentTime = 0) {
+            if (gameState.screen !== 'game') return;
+            
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            // Update game state
+            updatePlayer(deltaTime);
+            gameState.timeRemaining -= deltaTime;
+            
+            if (gameState.timeRemaining <= 0) {
+                showDefeatScreen();
+                return;
+            }
+            
+            updateUI();
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        createStars();
+        render();
+    </script>
+</body>
+</html>

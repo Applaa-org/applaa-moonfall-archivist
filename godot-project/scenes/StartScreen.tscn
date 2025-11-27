@@ -1,0 +1,73 @@
+[gd_scene load_steps=3 format=3 uid="uid://start_screen_moonfall"]
+
+[ext_resource type="Script" path="res://scripts/StartScreen.gd" id="1"]
+
+[sub_resource type="Theme" id="Theme_1"]
+Button/colors/font_color = Color(0.2, 0.8, 1, 1)
+Button/colors/font_hover_color = Color(0.5, 1, 1, 1)
+Button/colors/font_pressed_color = Color(0.1, 0.6, 0.8, 1)
+Button/constants/h_separation = 20
+Button/constants/v_separation = 10
+Label/colors/font_color = Color(0.8, 0.9, 1, 1)
+Label/colors/font_shadow_color = Color(0, 0.2, 0.4, 0.5)
+Label/constants/shadow_offset_x = 2
+Label/constants/shadow_offset_y = 2
+
+[node name="StartScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.05, 0.2, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+theme = SubResource("Theme_1")
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Moonfall Archivist"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+modulate = Color(0.5, 0.7, 1, 1)
+
+[node name="InstructionsLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Restore the lost moon archives by solving ancient puzzles.
+
+Controls:
+W/A/S/D - Move
+Space - Jump
+E - Interact
+ESC - Pause
+
+Align constellations, decode orb patterns, and repair ancient machines before time runs out!"
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Start Journey"
+
+[node name="CloseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Close"

@@ -1,0 +1,53 @@
+{
+  "game": {
+    "name": "Moonfall Archivist",
+    "type": "2D",
+    "genre": "puzzle-exploration",
+    "description": "Restore lost moon archives by aligning constellations, decoding orb patterns, and repairing ancient machines in a gravity-shifting lunar environment."
+  },
+  "settings": {
+    "window": {"width": 1024, "height": 768},
+    "physics": {"gravity": 200}
+  },
+  "player": {
+    "name": "Archivist",
+    "health": 100,
+    "speed": 150,
+    "abilities": ["move", "interact", "jump"]
+  },
+  "entities": {
+    "collectibles": [
+      {"name": "Constellation Fragment", "value": 25},
+      {"name": "Orb Pattern", "value": 50},
+      {"name": "Ancient Gear", "value": 75}
+    ],
+    "puzzles": [
+      {"name": "Constellation Alignment", "type": "pattern_match"},
+      {"name": "Orb Decoder", "type": "sequence_input"},
+      {"name": "Machine Repair", "type": "item_placement"}
+    ]
+  },
+  "levels": [
+    {
+      "name": "Archive Chamber 1",
+      "background": "lunar_interior",
+      "gravity": "down",
+      "puzzles": ["constellation", "orb_decoder"]
+    },
+    {
+      "name": "Gravity Core",
+      "background": "celestial_mechanism",
+      "gravity": "variable",
+      "puzzles": ["machine_repair"]
+    }
+  ],
+  "logic": {
+    "winCondition": "restore_all_archives",
+    "loseCondition": "time_limit_exceeded",
+    "scoring": {
+      "pointsPerPuzzle": 100,
+      "pointsPerCollectible": 25,
+      "timeBonus": 200
+    }
+  }
+}
